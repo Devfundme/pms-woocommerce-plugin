@@ -18,10 +18,13 @@ class WC_DevFundMe_PMS extends WC_Payment_Gateway {
         // Define user set variables
         $this->title = $this->get_option('title');
         $this->description = $this->get_option('description');
-        $this->api_token = $this->get_option('api_token');
+
+        // Retrieve the API token from options
+        $this->api_token = get_option('devfundme_pms_api_token', '');
 
         // Actions
         add_action('woocommerce_update_options_payment_gateways_' . $this->id, array($this, 'process_admin_options'));
+        add_action('admin_init', array($this, 'admin_options_init'));
     }
 
     public function init_form_fields() {
@@ -46,9 +49,9 @@ class WC_DevFundMe_PMS extends WC_Payment_Gateway {
                 'default' => 'Pay securely using DevFundMe Payment Gateway.',
             ),
             'api_token' => array(
-                'title' => 'API Token',
+                'title' => 'Reveal API Token',
                 'type' => 'text',
-                'description' => 'Enter your API token provided by DevFundMe.',
+                'description' => 'Enter your Reveal API Token.',
                 'default' => '',
             ),
         );
@@ -98,10 +101,9 @@ class WC_DevFundMe_PMS extends WC_Payment_Gateway {
     // Helper function to make API requests
     private function make_api_request($endpoint, $data) {
         $api_url = 'https://devfundme.com/api/pms' . $endpoint;
-        $api_token = $this->api_token; // Use the API token set by the user
 
         $headers = array(
-            'Authorization: Token ' . $api_token,
+            'Authorization: Token ' . $this->api_token,
             'Content-Type: application/json',
         );
 
@@ -119,5 +121,30 @@ class WC_DevFundMe_PMS extends WC_Payment_Gateway {
         } else {
             return array('error' => $api_response->get_error_message());
         }
+    }
+
+    // Additional function to handle saving the API token on admin options page
+    public function admin_options_init() {
+        if (isset($_POST[$this->plugin_id . $this->id . '_api_token'])) {
+            update_option('devfundme_pms_api_token', wc_clean($_POST[$this->plugin_id . $this->id . '_api_token']));
+        }
+    }
+
+    public function admin_options() {
+        ?>
+        <h2><?php _e('DevFundMe Payment Gateway Settings', 'devfundme-pms'); ?></h2>
+        <table class="form-table">
+            <?php $this->generate_settings_html(); ?>
+            <tr valign="top">
+                <th scope="row" class="titledesc"><?php _e('Reveal API Token', 'devfundme-pms'); ?></th>
+                <td class="forminp">
+                    <fieldset>
+                        <legend class="screen-reader-text"><span><?php _e('Reveal API Token', 'devfundme-pms'); ?></span></legend>
+                        <input type="text" name="<?php echo esc_attr($this->plugin_id . $this->id . '_api_token'); ?>" id="<?php echo esc_attr($this->plugin_id . $this->id . '_api_token'); ?>" value="<?php echo esc_attr($this->api_token); ?>" />
+                    </fieldset>
+                </td>
+            </tr>
+        </table>
+        <?php
     }
 }

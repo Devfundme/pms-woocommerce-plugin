@@ -1,9 +1,9 @@
 <?php
 /**
  * Plugin Name: DevFundMe Payment Gateway
- * Description: Custom WooCommerce payment gateway integrating with PMS API.
+ * Description: Custom WooCommerce payment gateway for PMS (Payment Management System).
  * Version: 1.0
- * Author: Freedy Meritus
+ * Author: Your Name
  */
 
 if (!defined('ABSPATH')) {
@@ -31,10 +31,10 @@ function init_devfundme_pms() {
     }
 }
 
-// Activation hook
+// Activation hook to set up the API token
 register_activation_hook(__FILE__, 'devfundme_pms_activate');
 
 function devfundme_pms_activate() {
-    // Set up default options when activating the gateway
+    // Set up the default API token value on activation
     update_option('devfundme_pms_api_token', '');
 }
