@@ -2,7 +2,7 @@
 /**
  * Plugin Name: DevFundMe Payment Gateway
  * Description: Custom WooCommerce payment gateway for PMS (Payment Management System).
- * Version: 1.0.1
+ * Version: 1.0.2
  * Author: Freedy Meritus
  * Text Domain: devfundme-pms
  * Domain Path: /languages
