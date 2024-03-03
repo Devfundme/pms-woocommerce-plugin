@@ -1,0 +1,10 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: \n"
+
+msgid "Pay securely using DevFundMe Payment Gateway."
+msgstr ""
+
+msgid "Payment for order"
+msgstr ""

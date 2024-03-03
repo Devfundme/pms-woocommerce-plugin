@@ -1,13 +1,19 @@
 <?php
+if (!defined('ABSPATH')) {
+    exit;
+}
+
 if (!class_exists('WC_Payment_Gateway')) {
     return;
 }
 
 class WC_DevFundMe_PMS extends WC_Payment_Gateway {
 
+    protected $api_token;
+
     public function __construct() {
         $this->id = 'devfundme_pms';
-        $this->method_title = 'DevFundMe Payment Gateway';
+        $this->method_title = __('DevFundMe Payment Gateway', 'devfundme-pms');
         $this->title = $this->get_option('title');
         $this->has_fields = true;
 
@@ -30,28 +36,28 @@ class WC_DevFundMe_PMS extends WC_Payment_Gateway {
     public function init_form_fields() {
         $this->form_fields = array(
             'enabled' => array(
-                'title' => 'Enable/Disable',
+                'title' => __('Enable/Disable', 'devfundme-pms'),
                 'type' => 'checkbox',
-                'label' => 'Enable DevFundMe Payment Gateway',
+                'label' => __('Enable DevFundMe Payment Gateway', 'devfundme-pms'),
                 'default' => 'yes',
             ),
             'title' => array(
-                'title' => 'Title',
+                'title' => __('Title', 'devfundme-pms'),
                 'type' => 'text',
-                'description' => 'This controls the title which the user sees during checkout.',
-                'default' => 'DevFundMe Payment Gateway',
+                'description' => __('This controls the title which the user sees during checkout.', 'devfundme-pms'),
+                'default' => __('DevFundMe Payment Gateway', 'devfundme-pms'),
                 'desc_tip' => true,
             ),
             'description' => array(
-                'title' => 'Description',
+                'title' => __('Description', 'devfundme-pms'),
                 'type' => 'textarea',
-                'description' => 'This controls the description which the user sees during checkout.',
-                'default' => 'Pay securely using DevFundMe Payment Gateway.',
+                'description' => __('This controls the description which the user sees during checkout.', 'devfundme-pms'),
+                'default' => __('Pay securely using DevFundMe Payment Gateway.', 'devfundme-pms'),
             ),
             'api_token' => array(
-                'title' => 'Reveal API Token',
+                'title' => __('Reveal API Token', 'devfundme-pms'),
                 'type' => 'text',
-                'description' => 'Enter your Reveal API Token.',
+                'description' => __('Enter your Reveal API Token.', 'devfundme-pms'),
                 'default' => '',
             ),
         );
@@ -62,10 +68,10 @@ class WC_DevFundMe_PMS extends WC_Payment_Gateway {
 
         // Retrieve the order details
         $amount = $order->get_total();
-        $payor_name = $order->get_billing_first_name(); // You may customize this based on your needs
+        $payor_name = $order->get_billing_first_name();
         $payor_email = $order->get_billing_email();
-        $meta_data = array('order_id' => $order_id); // Add any additional metadata as needed
-        $note = 'Payment for order ' . $order_id;
+        $meta_data = array('order_id' => $order_id);
+        $note = __('Payment for order', 'devfundme-pms') . ' ' . $order_id;
         $return_url = $this->get_return_url($order);
 
         // Prepare API request data
@@ -90,7 +96,7 @@ class WC_DevFundMe_PMS extends WC_Payment_Gateway {
             );
         } else {
             // Handle API request failure
-            $error_message = isset($api_response['error']) ? $api_response['error'] : 'API request failed.';
+            $error_message = isset($api_response['error']) ? $api_response['error'] : __('API request failed.', 'devfundme-pms');
             wc_add_notice($error_message, 'error');
             return array(
                 'result' => 'fail',
@@ -111,7 +117,7 @@ class WC_DevFundMe_PMS extends WC_Payment_Gateway {
             $api_url,
             array(
                 'headers' => $headers,
-                'body' => json_encode($data),
+                'body' => wp_json_encode($data), // Use wp_json_encode for consistency
             )
         );
 
@@ -126,7 +132,7 @@ class WC_DevFundMe_PMS extends WC_Payment_Gateway {
     // Additional function to handle saving the API token on admin options page
     public function admin_options_init() {
         if (isset($_POST[$this->plugin_id . $this->id . '_api_token'])) {
-            update_option('devfundme_pms_api_token', wc_clean($_POST[$this->plugin_id . $this->id . '_api_token']));
+            update_option('devfundme_pms_api_token', wc_clean(wp_unslash($_POST[$this->plugin_id . $this->id . '_api_token'])));
         }
     }
 
