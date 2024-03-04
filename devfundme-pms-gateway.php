@@ -2,7 +2,7 @@
 /**
  * Plugin Name: DevFundMe Payment Gateway
  * Description: Custom WooCommerce payment gateway for PMS (Payment Management System).
- * Version: 2.0.0
+ * Version: 2.0.1
  * Author: Freedy Meritus
  * Text Domain: devfundme-pms-gateway
  * Domain Path: /languages
@@ -12,7 +12,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-if (class_exists('WC_Payment_Gateway') && version_compare(WC_VERSION, '3.0.0', '>=')) {
+if (class_exists('WC_Payment_Gateway')) {
     /*
     * This action hook registers our PHP class as a WooCommerce payment gateway
     */
@@ -31,7 +31,7 @@ else {
 function devfundme_pms_wc_version_notice() {
     ?>
     <div class="notice notice-error">
-        <p><?php esc_html_e('DevFundMe Payment Gateway requires WooCommerce version 3.0.0 or higher.', 'devfundme-pms'); ?></p>
+        <p><?php esc_html_e('DevFundMe Payment Gateway requires WooCommerce', 'devfundme-pms'); ?></p>
     </div>
     <?php
 }
