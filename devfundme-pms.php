@@ -2,7 +2,7 @@
 /**
  * Plugin Name: DevFundMe Payment Gateway
  * Description: Custom WooCommerce payment gateway for PMS (Payment Management System).
- * Version: 1.0.2
+ * Version: v1.0.3
  * Author: Freedy Meritus
  * Text Domain: devfundme-pms
  * Domain Path: /languages
@@ -51,6 +51,7 @@ function devfundme_pms_activate() {
     try {
         // Set up the default API token value on activation
         update_option('devfundme_pms_api_token', '');
+        error_log('DevFundMe PMS activated successfully.');
     } catch (Exception $e) {
         // Handle activation error (e.g., log the error, display a notice)
         error_log('DevFundMe PMS activation error: ' . $e->getMessage());

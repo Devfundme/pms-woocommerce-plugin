@@ -1,9 +1,9 @@
 === DevFundMe Payment Gateway ===
 Contributors: (undisplay)
-Tags: v1.0.1,v1.0.2
+Tags: v1.0.1,v1.0.2,v1.0.3
 Requires at least: 4.7
 Tested up to: 5.4
-Stable tag: v1.0.2
+Stable tag: v1.0.3
 Requires PHP: 7.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html

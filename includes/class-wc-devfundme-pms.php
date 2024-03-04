@@ -66,6 +66,12 @@ class WC_DevFundMe_PMS extends WC_Payment_Gateway {
     public function process_payment($order_id) {
         $order = wc_get_order($order_id);
 
+         // Nonce verification
+         if (empty($_POST['_wpnonce']) || !wp_verify_nonce($_POST['_wpnonce'], 'process_payment')) {
+            wc_add_notice(__('Invalid nonce. Please try again.', 'devfundme-pms'), 'error');
+            return;
+        }
+
         // Retrieve the order details
         $amount = $order->get_total();
         $payor_name = $order->get_billing_first_name();
@@ -132,6 +138,11 @@ class WC_DevFundMe_PMS extends WC_Payment_Gateway {
     // Additional function to handle saving the API token on admin options page
     public function admin_options_init() {
         if (isset($_POST[$this->plugin_id . $this->id . '_api_token'])) {
+            // Nonce verification for saving options
+            if (empty($_POST['_wpnonce']) || !wp_verify_nonce($_POST['_wpnonce'], 'save_settings')) {
+                wp_die(__('Permission check failed. Please try again.', 'devfundme-pms'));
+            }
+
             update_option('devfundme_pms_api_token', wc_clean(wp_unslash($_POST[$this->plugin_id . $this->id . '_api_token'])));
         }
     }
@@ -146,6 +157,10 @@ class WC_DevFundMe_PMS extends WC_Payment_Gateway {
                 <td class="forminp">
                     <fieldset>
                         <legend class="screen-reader-text"><span><?php _e('Reveal API Token', 'devfundme-pms'); ?></span></legend>
+                        <?php
+                            // Include nonce field
+                            wp_nonce_field('_wpnonce', '_wpnonce');
+                        ?>
                         <input type="text" name="<?php echo esc_attr($this->plugin_id . $this->id . '_api_token'); ?>" id="<?php echo esc_attr($this->plugin_id . $this->id . '_api_token'); ?>" value="<?php echo esc_attr($this->api_token); ?>" />
                     </fieldset>
                 </td>

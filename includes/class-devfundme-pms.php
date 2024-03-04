@@ -18,6 +18,12 @@ class DevFundMe_PMS {
     public function process_payment($order_id) {
         $order = wc_get_order($order_id);
 
+        // Nonce verification
+        if (empty($_POST['_wpnonce']) || !wp_verify_nonce($_POST['_wpnonce'], 'process_payment')) {
+            wc_add_notice(__('Invalid nonce. Please try again.', 'devfundme-pms'), 'error');
+            return;
+        }
+
         // Retrieve the order details
         $amount = $order->get_total();
         $payor_name = $order->get_billing_first_name();
@@ -84,6 +90,11 @@ class DevFundMe_PMS {
     // Additional function to handle saving the API token on admin options page
     public function admin_options_init() {
         if (isset($_POST['devfundme_pms_api_token'])) {
+            // Nonce verification for saving options
+            if (empty($_POST['_wpnonce']) || !wp_verify_nonce($_POST['_wpnonce'], 'save_settings')) {
+                wp_die(__('Permission check failed. Please try again.', 'devfundme-pms'));
+            }
+            
             update_option('devfundme_pms_api_token', wc_clean(wp_unslash($_POST['devfundme_pms_api_token'])));
         }
     }
