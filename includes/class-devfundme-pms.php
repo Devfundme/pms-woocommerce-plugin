@@ -20,7 +20,7 @@ class DevFundMe_PMS {
 
         // Nonce verification
         if (empty($_POST['_wpnonce']) || !wp_verify_nonce($_POST['_wpnonce'], 'process_payment')) {
-            wc_add_notice(__('Invalid nonce. Please try again.', 'devfundme-pms'), 'error');
+            wc_add_notice(esc_html_e(__('Invalid nonce. Please try again.', 'devfundme-pms')), 'error');
             return;
         }
 
@@ -92,7 +92,7 @@ class DevFundMe_PMS {
         if (isset($_POST['devfundme_pms_api_token'])) {
             // Nonce verification for saving options
             if (empty($_POST['_wpnonce']) || !wp_verify_nonce($_POST['_wpnonce'], 'save_settings')) {
-                wp_die(__('Permission check failed. Please try again.', 'devfundme-pms'));
+                wp_die(esc_html_e(__('Permission check failed. Please try again.', 'devfundme-pms')));
             }
             
             update_option('devfundme_pms_api_token', wc_clean(wp_unslash($_POST['devfundme_pms_api_token'])));

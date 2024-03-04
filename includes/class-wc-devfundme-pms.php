@@ -136,30 +136,19 @@ class WC_DevFundMe_PMS extends WC_Payment_Gateway {
     }
 
     // Additional function to handle saving the API token on admin options page
-    public function admin_options_init() {
-        if (isset($_POST[$this->plugin_id . $this->id . '_api_token'])) {
-            // Nonce verification for saving options
-            if (empty($_POST['_wpnonce']) || !wp_verify_nonce($_POST['_wpnonce'], 'save_settings')) {
-                wp_die(__('Permission check failed. Please try again.', 'devfundme-pms'));
-            }
-
-            update_option('devfundme_pms_api_token', wc_clean(wp_unslash($_POST[$this->plugin_id . $this->id . '_api_token'])));
-        }
-    }
-
     public function admin_options() {
         ?>
-        <h2><?php _e('DevFundMe Payment Gateway Settings', 'devfundme-pms'); ?></h2>
+        <h2><?php esc_html_e('DevFundMe Payment Gateway Settings', 'devfundme-pms'); ?></h2>
         <table class="form-table">
             <?php $this->generate_settings_html(); ?>
             <tr valign="top">
-                <th scope="row" class="titledesc"><?php _e('Reveal API Token', 'devfundme-pms'); ?></th>
+                <th scope="row" class="titledesc"><?php esc_html_e('Reveal API Token', 'devfundme-pms'); ?></th>
                 <td class="forminp">
                     <fieldset>
-                        <legend class="screen-reader-text"><span><?php _e('Reveal API Token', 'devfundme-pms'); ?></span></legend>
+                        <legend class="screen-reader-text"><span><?php esc_html_e('Reveal API Token', 'devfundme-pms'); ?></span></legend>
                         <?php
-                            // Include nonce field
-                            wp_nonce_field('_wpnonce', '_wpnonce');
+                        // Include nonce field
+                        wp_nonce_field('_wpnonce', '_wpnonce');
                         ?>
                         <input type="text" name="<?php echo esc_attr($this->plugin_id . $this->id . '_api_token'); ?>" id="<?php echo esc_attr($this->plugin_id . $this->id . '_api_token'); ?>" value="<?php echo esc_attr($this->api_token); ?>" />
                     </fieldset>
@@ -168,4 +157,21 @@ class WC_DevFundMe_PMS extends WC_Payment_Gateway {
         </table>
         <?php
     }
+    
+    public function admin_options_init() {
+        try {
+            // Check nonce
+            if (
+                isset($_POST[$this->plugin_id . $this->id . '_api_token']) &&
+                isset($_POST['_wpnonce']) &&
+                wp_verify_nonce($_POST['_wpnonce'], '_wpnonce')
+            ) {
+                update_option('devfundme_pms_api_token', wc_clean(wp_unslash($_POST[$this->plugin_id . $this->id . '_api_token'])));
+            }
+        } catch (Exception $e) {
+            // Log the error for debugging
+            error_log('DevFundMe PMS Activation Error: ' . $e->getMessage());
+            // You might want to display an admin notice here or handle the error accordingly
+        }
+    }    
 }
