@@ -2,10 +2,9 @@
 /**
  * Plugin Name: DevFundMe Payment Gateway
  * Description: Custom WooCommerce payment gateway for PMS (Payment Management System).
- * Version: 2.0.1
+ * Version: 2.1.0
  * Author: Freedy Meritus
  * Text Domain: devfundme-pms-gateway
- * Domain Path: /languages
  */
 
 if (!defined('ABSPATH')) {
@@ -50,6 +49,7 @@ function devfundme_init_gateway_class() {
         public function __construct() {
 
             $this->id = 'dfm_pms'; // payment gateway plugin ID
+            $this->icon = plugin_dir_url( __DIR__ ) . 'assets/icon.png';
             $this->has_fields = true; // in case you need a custom credit card form
             $this->method_title = 'Devfundme PMS Gateway';
             $this->method_description = 'DCustom WooCommerce payment gateway for PMS (Payment Management System).'; // will be displayed on the options page
@@ -123,7 +123,8 @@ function devfundme_init_gateway_class() {
             $payor_email = $order->get_billing_email();
             $meta_data = array('order_id' => $order_id);
             $note = 'Payment for order'.' '.$order_id;
-            $return_url = './wc-api/confirm_payment/';
+            $return_url = $this->get_return_url($order);
+            $webhooks_url =  bloginfo('url') . '/wc-api/confirm_payment/';
     
             // Prepare API request data
             $api_request_data = array(
@@ -133,6 +134,7 @@ function devfundme_init_gateway_class() {
                 'meta_data' => $meta_data,
                 'note' => $note,
                 'return_url' => $return_url,
+                'webhooks_url' => $webhooks_url,
             );
     
             // Perform the API request
@@ -184,14 +186,12 @@ function devfundme_init_gateway_class() {
 		 * In case you need a webhook, like PayPal IPN etc
 		 */
 		public function webhook() {
-	
-            $order = wc_get_order( $_GET[ 'id' ] );
+
+            $order = wc_get_order( $_POST[ 'meta_data' ]['order_id'] );
             $order->payment_complete();
             $order->reduce_order_stock();
         
-            update_option( 'webhook_debug', $_GET );
-
-            return wp_redirect($this->get_return_url( $order ));
+            update_option( 'webhook_debug', $_POST );
         }
  	}
 }
