@@ -2,7 +2,7 @@
 /**
  * Plugin Name: DevFundMe Payment Gateway
  * Description: Custom WooCommerce payment gateway for PMS (Payment Management System).
- * Version: 2.1.0
+ * Version: 2.2.0
  * Author: Freedy Meritus
  * Text Domain: devfundme-pms-gateway
  */
@@ -11,28 +11,71 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-if (class_exists('WC_Payment_Gateway')) {
-    /*
-    * This action hook registers our PHP class as a WooCommerce payment gateway
-    */
-    add_filter( 'woocommerce_payment_gateways', 'devfundme_add_gateway_class' );
-    function devfundme_add_gateway_class( $gateways ) {
-        $gateways[] = 'WC_Devfundme_PMS_Gateway'; // your class name is here
-        return $gateways;
+class FT_AdminNotice {
+    
+    protected $min_wc = '5.0.0'; //replace '5.0.0' with your dependent plugin version number
+    
+    /**
+     * Register the activation hook
+     */
+    public function __construct() {
+        register_activation_hook( __FILE__, array( $this, 'ft_install' ) );
     }
-} 
-else {
-    // Display a notice or take appropriate action for incompatible WooCommerce version
-    add_action('admin_notices', 'devfundme_pms_wc_version_notice');
+    
+    /**
+     * Check the dependent plugin version
+     */
+    protected function ft_is_wc_compatible() {          
+        return defined( 'WC_VERSION' ) && version_compare( WC_VERSION, $this->min_wc, '>=' );
+    }
+    
+    /**
+     * Function to deactivate the plugin
+     */
+    protected function ft_deactivate_plugin() {
+        require_once( ABSPATH . 'wp-admin/includes/plugin.php' );
+        deactivate_plugins( plugin_basename( __FILE__ ) );
+        if ( isset( $_GET['activate'] ) ) {
+            unset( $_GET['activate'] );
+        }
+    }
+    
+    /**
+     * Deactivate the plugin and display a notice if the dependent plugin is not compatible or not active.
+     */
+    public function ft_install() {
+        if ( ! $this->ft_is_wc_compatible() || ! class_exists( 'WooCommerce' ) ) {
+            $this->ft_deactivate_plugin();
+            wp_die( 'Could not be activated. ' . $this->get_ft_admin_notices() );
+        } else {
+            //do your fancy staff here
+        }
+    }
+    
+    /**
+     * Writing the admin notice
+     */
+    protected function get_ft_admin_notices() {
+        return sprintf(
+            '%1$s requires WooCommerce version %2$s or higher installed and active. You can download WooCommerce latest version %3$s OR go back to %4$s.',
+            '<strong>' . $this->plugin_name . '</strong>',
+            $this->min_wc,
+            '<strong><a href="https://downloads.wordpress.org/plugin/woocommerce.latest-stable.zip">from here</a></strong>',
+            '<strong><a href="' . esc_url( admin_url( 'plugins.php' ) ) . '">plugins page</a></strong>'
+        );
+    }
+
 }
 
-// Display notice for incompatible WooCommerce version
-function devfundme_pms_wc_version_notice() {
-    ?>
-    <div class="notice notice-error">
-        <p><?php esc_html_e('DevFundMe Payment Gateway requires WooCommerce', 'devfundme-pms'); ?></p>
-    </div>
-    <?php
+new FT_AdminNotice();
+
+/*
+* This action hook registers our PHP class as a WooCommerce payment gateway
+*/
+add_filter( 'woocommerce_payment_gateways', 'devfundme_add_gateway_class' );
+function devfundme_add_gateway_class( $gateways ) {
+    $gateways[] = 'WC_Devfundme_PMS_Gateway'; // your class name is here
+    return $gateways;
 }
 
 /*
