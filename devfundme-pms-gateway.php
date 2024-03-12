@@ -2,10 +2,14 @@
 /**
  * Plugin Name: DevFundMe Payment Gateway
  * Description: Custom WooCommerce payment gateway for PMS (Payment Management System).
- * Version: 2.2.0
+ * Version: 1.0.0
  * Author: Freedy Meritus
  * Text Domain: devfundme-pms-gateway
  */
+
+ ini_set('display_errors', 1);
+ ini_set('display_startup_errors', 1);
+ error_reporting(E_ALL);
 
 if (!defined('ABSPATH')) {
     exit;
@@ -13,30 +17,30 @@ if (!defined('ABSPATH')) {
 
 class FT_AdminNotice {
     
-    protected $min_wc = '5.0.0'; //replace '5.0.0' with your dependent plugin version number
+    protected $min_wc = '5.0.0'; // Replace '5.0.0' with your dependent plugin version number
     
     /**
      * Register the activation hook
      */
     public function __construct() {
-        register_activation_hook( __FILE__, array( $this, 'ft_install' ) );
+        register_activation_hook(__FILE__, array($this, 'ft_install'));
     }
     
     /**
      * Check the dependent plugin version
      */
     protected function ft_is_wc_compatible() {          
-        return defined( 'WC_VERSION' ) && version_compare( WC_VERSION, $this->min_wc, '>=' );
+        return defined('WC_VERSION') && version_compare(WC_VERSION, $this->min_wc, '>=');
     }
     
     /**
      * Function to deactivate the plugin
      */
     protected function ft_deactivate_plugin() {
-        require_once( ABSPATH . 'wp-admin/includes/plugin.php' );
-        deactivate_plugins( plugin_basename( __FILE__ ) );
-        if ( isset( $_GET['activate'] ) ) {
-            unset( $_GET['activate'] );
+        require_once(ABSPATH . 'wp-admin/includes/plugin.php');
+        deactivate_plugins(plugin_basename(__FILE__));
+        if (isset($_GET['activate'])) {
+            unset($_GET['activate']);
         }
     }
     
@@ -44,11 +48,11 @@ class FT_AdminNotice {
      * Deactivate the plugin and display a notice if the dependent plugin is not compatible or not active.
      */
     public function ft_install() {
-        if ( ! $this->ft_is_wc_compatible() || ! class_exists( 'WooCommerce' ) ) {
+        if (!$this->ft_is_wc_compatible() || !class_exists('WooCommerce')) {
             $this->ft_deactivate_plugin();
-            wp_die( 'Could not be activated. ' . $this->get_ft_admin_notices() );
+            wp_die('Could not be activated. ' . $this->get_ft_admin_notices());
         } else {
-            //do your fancy staff here
+            // Do your fancy stuff here
         }
     }
     
@@ -61,7 +65,7 @@ class FT_AdminNotice {
             '<strong>' . $this->plugin_name . '</strong>',
             $this->min_wc,
             '<strong><a href="https://downloads.wordpress.org/plugin/woocommerce.latest-stable.zip">from here</a></strong>',
-            '<strong><a href="' . esc_url( admin_url( 'plugins.php' ) ) . '">plugins page</a></strong>'
+            '<strong><a href="' . esc_url(admin_url('plugins.php')) . '">plugins page</a></strong>'
         );
     }
 
@@ -69,61 +73,59 @@ class FT_AdminNotice {
 
 new FT_AdminNotice();
 
-/*
-* This action hook registers our PHP class as a WooCommerce payment gateway
-*/
-add_filter( 'woocommerce_payment_gateways', 'devfundme_add_gateway_class' );
-function devfundme_add_gateway_class( $gateways ) {
-    $gateways[] = 'WC_Devfundme_PMS_Gateway'; // your class name is here
+/**
+ * Register the DevFundMe PMS Gateway class with WooCommerce
+ */
+add_filter('woocommerce_payment_gateways', 'devfundme_add_gateway_class');
+function devfundme_add_gateway_class($gateways) {
+    $gateways[] = 'WC_Devfundme_PMS_Gateway';
     return $gateways;
 }
 
-/*
- * The class itself, please note that it is inside plugins_loaded action hook
+/**
+ * Initialize the DevFundMe PMS Gateway class after WooCommerce is loaded
  */
-add_action( 'plugins_loaded', 'devfundme_init_gateway_class' );
+add_action('woocommerce_loaded', 'devfundme_init_gateway_class');
 function devfundme_init_gateway_class() {
 
-	class WC_Devfundme_PMS_Gateway extends WC_Payment_Gateway {
+    class WC_Devfundme_PMS_Gateway extends WC_Payment_Gateway {
 
- 		/**
- 		 * Class constructor
- 		 */
+        public $api_token;
+
+        /**
+         * Class constructor
+         */
         public function __construct() {
 
-            $this->id = 'dfm_pms'; // payment gateway plugin ID
-            $this->icon = plugin_dir_url( __DIR__ ) . 'assets/icon.png';
-            $this->has_fields = true; // in case you need a custom credit card form
+            $this->id = 'dfm_pms'; // Payment gateway plugin ID
+            $this->icon = plugins_url('assets/images/icon.png', __FILE__);
+            $this->has_fields = true; // In case you need a custom credit card form
             $this->method_title = 'Devfundme PMS Gateway';
-            $this->method_description = 'DCustom WooCommerce payment gateway for PMS (Payment Management System).'; // will be displayed on the options page
+            $this->method_description = 'Devfundme PMS(Payment Management System) WooCommerce payment gateway.'; // Will be displayed on the options page
         
-            // gateways can support subscriptions, refunds, saved payment methods,
-            // but in this tutorial we begin with simple payments
             $this->supports = array(
-                'products'
+                'products',
+                'tokenization',
+                'add_payment_method',
+                // 'default_credit_card_form', // Add this line for block-based checkout support
             );
-        
-            // Method with all the options fields
-            $this->init_form_fields();
-        
-            // Load the settings.
-            $this->init_settings();
-            $this->title = $this->get_option( 'title' );
-            $this->description = $this->get_option( 'description' );
-            $this->enabled = $this->get_option( 'enabled' );
-            $this->api_token = $this->get_option( 'api_token' );
 
-            // This action hook saves the settings
-            add_action( 'woocommerce_update_options_payment_gateways_' . $this->id, array( $this, 'process_admin_options' ) );
-            
-            // You can also register a webhook here
-            add_action( 'woocommerce_api_confirm_payment', array( $this, 'webhook' ) );
+            $this->init_form_fields();
+            $this->init_settings();
+
+            $this->title = $this->get_option('title');
+            $this->description = $this->get_option('description');
+            $this->enabled = $this->get_option('enabled');
+            $this->api_token = $this->get_option('api_token');
+
+            add_action('woocommerce_update_options_payment_gateways_' . $this->id, array($this, 'process_admin_options'));
+            add_action('woocommerce_api_confirm_payment', array($this, 'webhook'));
         }
 
-		/**
- 		 * Plugin options, we deal with it in Step 3 too
- 		 */
-        public function init_form_fields(){
+        /**
+         * Define settings fields for the gateway
+         */
+        public function init_form_fields() {
 
             $this->form_fields = array(
                 'enabled' => array(
@@ -154,21 +156,72 @@ function devfundme_init_gateway_class() {
             );
         }
 
-		/*
-		 * We're processing the payments here, everything about it is in Step 5
-		 */
-		public function process_payment($order_id) {
+        /**
+         * Process the payment
+         */
+        public function process_payment($order_id) {
             $order = wc_get_order($order_id);
-    
+
+            $order_desc='';
+
+            foreach ($order->get_items() as $item_key => $item ):
+
+                ## Using WC_Order_Item methods ##
+            
+                // Item ID is directly accessible from the $item_key in the foreach loop or
+                $item_id = $item->get_id();
+            
+                ## Using WC_Order_Item_Product methods ##
+            
+                $product      = $item->get_product(); // Get the WC_Product object
+            
+                $product_id   = $item->get_product_id(); // the Product id
+                $variation_id = $item->get_variation_id(); // the Variation id
+            
+                $item_type    = $item->get_type(); // Type of the order item ("line_item")
+            
+                $item_name    = $item->get_name(); // Name of the product
+                $quantity     = $item->get_quantity();  
+                $tax_class    = $item->get_tax_class();
+                $line_subtotal     = $item->get_subtotal(); // Line subtotal (non discounted)
+                $line_subtotal_tax = $item->get_subtotal_tax(); // Line subtotal tax (non discounted)
+                $line_total        = $item->get_total(); // Line total (discounted)
+                $line_total_tax    = $item->get_total_tax(); // Line total tax (discounted)
+            
+                ## Access Order Items data properties (in an array of values) ##
+                $item_data    = $item->get_data();
+            
+                $product_name = $item_data['name'];
+                $product_id   = $item_data['product_id'];
+                $variation_id = $item_data['variation_id'];
+                $quantity     = $item_data['quantity'];
+                $tax_class    = $item_data['tax_class'];
+                $line_subtotal     = $item_data['subtotal'];
+                $line_subtotal_tax = $item_data['subtotal_tax'];
+                $line_total        = $item_data['total'];
+                $line_total_tax    = $item_data['total_tax'];
+            
+                // Get data from The WC_product object using methods (examples)
+                $product        = $item->get_product(); // Get the WC_Product object
+            
+                $product_type   = $product->get_type();
+                $product_sku    = $product->get_sku();
+                $product_price  = $product->get_price();
+                $stock_quantity = $product->get_stock_quantity();
+
+                $order_desc = $order_desc . $product_name . '($'.$product_price.')x' . $quantity.';';
+            
+            endforeach;
+
             // Retrieve the order details
             $amount = $order->get_total();
             $payor_name = $order->get_billing_first_name();
             $payor_email = $order->get_billing_email();
             $meta_data = array('order_id' => $order_id);
-            $note = 'Payment for order'.' '.$order_id;
+            $note = $order_desc;
             $return_url = $this->get_return_url($order);
-            $webhooks_url =  bloginfo('url') . '/wc-api/confirm_payment/';
-    
+            $webhooks_url = get_site_url().'/wc-api/confirm_payment/';
+
             // Prepare API request data
             $api_request_data = array(
                 'amount' => $amount,
@@ -179,13 +232,13 @@ function devfundme_init_gateway_class() {
                 'return_url' => $return_url,
                 'webhooks_url' => $webhooks_url,
             );
-    
+
             // Perform the API request
             $api_response = $this->make_api_request('/generate_paylink/', $api_request_data);
-    
+
             // Check if the API request was successful
             if ($api_response && isset($api_response['pay_url'])) {
-                // Redirect the customer to the generated checkout link
+                // Return the payment redirect URL
                 return array(
                     'result' => 'success',
                     'redirect' => $api_response['pay_url'],
@@ -199,42 +252,45 @@ function devfundme_init_gateway_class() {
                 );
             }
         }
-    
-        // Helper function to make API requests
+
+        /**
+         * Helper function to make API requests
+         */
         private function make_api_request($endpoint, $data) {
             $api_url = 'https://devfundme.com/api/pms' . $endpoint;
-    
+
             $headers = array(
-                'Authorization: Token ' . $this->api_token,
-                'Content-Type: application/json',
+                'Authorization' => 'Token ' . $this->api_token,
+                'Content-Type' => 'application/json',
             );
-    
+
             $api_response = wp_remote_post(
                 $api_url,
                 array(
                     'headers' => $headers,
-                    'body' => wp_json_encode($data), // Use wp_json_encode for consistency
+                    'body' => wp_json_encode($data),
                 )
             );
-    
+
+            
             // Check for errors and return the API response
             if (!is_wp_error($api_response)) {
                 return json_decode(wp_remote_retrieve_body($api_response), true);
             } else {
+                wc_add_notice(wp_remote_retrieve_body($api_response), 'error');
                 return array('error' => $api_response->get_error_message());
             }
         }
 
-		/*
-		 * In case you need a webhook, like PayPal IPN etc
-		 */
-		public function webhook() {
-
-            $order = wc_get_order( $_POST[ 'meta_data' ]['order_id'] );
+        /**
+         * Webhook handler
+         */
+        public function webhook() {
+            $order = wc_get_order($_POST['meta_data']['order_id']);
             $order->payment_complete();
-            $order->reduce_order_stock();
-        
-            update_option( 'webhook_debug', $_POST );
+            // $order->reduce_order_stock();
+
+            update_option('webhook_debug', $_POST);
         }
- 	}
+    }
 }
