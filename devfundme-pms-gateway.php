@@ -2,9 +2,9 @@
 /**
  * Plugin Name: DevFundMe Payment Gateway
  * Description: Custom WooCommerce payment gateway for PMS (Payment Management System).
- * Version: 1.0.1
+ * Version: 1.1.0
  * Author: Freedy Meritus
- * Author URI: https://devfundme.com
+ * Author URI: https://devfundme.com/en/pms/service/
  * Text Domain: devfundme-pms-gateway
  */
 
@@ -120,7 +120,7 @@ function devfundme_init_gateway_class() {
             $this->api_token = $this->get_option('api_token');
 
             add_action('woocommerce_update_options_payment_gateways_' . $this->id, array($this, 'process_admin_options'));
-            add_action('woocommerce_api_confirm_payment', array($this, 'webhook'));
+            add_action('woocommerce_api_dfm_confirm_payment', array($this, 'webhook'));
         }
 
         /**
@@ -221,7 +221,7 @@ function devfundme_init_gateway_class() {
             $meta_data = array('order_id' => $order_id);
             $note = $order_desc;
             $return_url = $this->get_return_url($order);
-            $webhooks_url = get_site_url().'/wc-api/confirm_payment/';
+            $webhooks_url = get_site_url().'/wc-api/dfm_confirm_payment/';
 
             // Prepare API request data
             $api_request_data = array(
@@ -288,19 +288,31 @@ function devfundme_init_gateway_class() {
          * Webhook handler
          */
         public function webhook() {
+            header( 'HTTP/1.1 200 OK' );
 
-            $order = wc_get_order($_POST['meta_data']['order_id']);
-            
-            if (!empty($order) && $order->get_status() != 'completed') {
-                $order-> payment_complete();
-                $order->reduce_order_stock();
+            $json = file_get_contents('php://input'); 
+            $obj = json_decode($json, true);
+
+            $order_id = $obj['meta_data']['order_id'];
+
+            if ( !empty( $order_id ) ) {
+
+                $order = wc_get_order($order_id);
+                $order->payment_complete();
+
+                $order->update_status('completed');
+
+                wc_reduce_stock_levels($order_id);
+
+                $order->save();
+
             }
 
-            update_option('webhook_debug', $_POST);
+            update_option('webhook_debug', $obj);
 
-            return array(
-                'result' => 'success'
-            );
+            echo $order->get_status();
+            
+            die();
         }
     }
 }
