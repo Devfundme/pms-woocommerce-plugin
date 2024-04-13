@@ -2,7 +2,7 @@
 /**
  * Plugin Name: DevFundMe Payment Gateway
  * Description: Custom WooCommerce payment gateway for PMS (Payment Management System).
- * Version: 1.1.0
+ * Version: 1.2.0
  * Author: Freedy Meritus
  * Author URI: https://devfundme.com/en/pms/service/
  * Text Domain: devfundme-pms-gateway
@@ -239,7 +239,7 @@ function devfundme_init_gateway_class() {
 
             // Check if the API request was successful
             if ($api_response && isset($api_response['pay_url'])) {
-                $order->update_status('processing');
+                // $order->update_status('processing');
                 // Return the payment redirect URL
                 return array(
                     'result' => 'success',
